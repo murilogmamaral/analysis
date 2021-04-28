@@ -5,42 +5,37 @@ library(shiny)
 BACKGROUND <- function(){
   tags$head(
     tags$style(paste0(
-      "body { ",
-      "  content: ''; ",
-      "  background-color: WhiteSmoke }",
-      "
+"body {
+content: '';
+background-color: WhiteSmoke
+}
 .irs-bar,
 .irs-bar-edge,
 .irs-single,
 .irs-grid-pol {
-  background: black;
-  border-color: black;
+background: black;
+border-color: black;
 }
-
 *:focus:not(.focus-visible) {
-  outline: 0 !important;
-  box-shadow: none !important;
+outline: 0 !important;
+box-shadow: none !important;
 }
-
-.progress-bar{background-color:#34495E;}
-
-                    thead {
-                    color: #34495E;
-                    }
-
-                     tbody {
-                    color: #34495E;
-                     }
-                     
-                    tr:hover {background-color: #D5D8DC !important;}
-                    
+.progress-bar {
+background-color:#34495E;
+}
+thead { color: #34495E;
+}
+tbody { color: #34495E;
+}
+tr:hover {
+background-color: #D5D8DC !important;
+}
 .col-sm-6 {
     width: 100%;
     font-size: 11px;
     text-align: right;
 }
-.dataTables_paginate
-{
+.dataTables_paginate {
 text-align: right !important;
 }
 .dataTables_paginate a {
@@ -50,7 +45,6 @@ color: #34495E !important;
 background-color: lightgray !important;
 border-color: lightgray !important;
 }
-
 footer {
 background: black;
 width: 100%;
@@ -65,30 +59,37 @@ color: darkgray;
 line-height: 30px;
 font-size: 11px;
 }
-
 ")))
 }
 
 ui <- fluidPage(
   
-  tags$head(includeHTML(("google-analytics.html"))),
-  tags$head(tags$style("#titulo{font-size:14px;font-weight:bold;text-align:center;width:670px}")),
+  tags$head(tags$style(
+    "#titulo{font-size:14px;
+    font-weight:bold; text-align:center;
+    width:670px}"
+  )),
+  
   BACKGROUND(),
+  
   HTML("<br>"),
   
   mainPanel(
     HTML("<br>"),
     tags$style(type="text/css",
-               '#DTO tfoot {display:none;}'),
+               "#DTO tfoot {display:none;}"),
     tags$style(paste0(
       "#DTO .table th { text-align: center; }
-     #DTO .table td { text-align: center; }",
-      "#DTO { text-align:center }")),
+       #DTO .table td { text-align: center; }
+       #DTO { text-align:center }")),
     verbatimTextOutput("titulo"),
     uiOutput("uiOutput"),
     uiOutput("uiOutput2"),
-    tags$head(tags$style("#VTO{font-size:15px;font-weight: bold;background-color: transparent;border-color:black; display: table-cell;
-    vertical-align: middle }")),
+    tags$head(tags$style("
+       #VTO{font-size:15px;
+       font-weight: bold;background-color: transparent;
+       border-color:black; display: table-cell;
+       vertical-align: middle }")),
     verbatimTextOutput("VTO"),
     HTML("<br>"),
     uiOutput("uiOutput3"),
@@ -97,19 +98,13 @@ ui <- fluidPage(
     div(style='margin-bottom:25px',dataTableOutput("DTO")),
     tableOutput("TO"),
     HTML("<br><br>"),
-    fluid = F,width = 12,style='left:25px;right:25px;width:700px;')
+    fluid = F,width = 12,style='left:25px; right:25px; width:700px;')
 )
 
 server <-
   function(input, output,session) {
     
     output$titulo <- renderPrint({cat("Win-Loss Analysis")})
-    #showModal(modalDialog(
-    #  title = "Win-loss analysis",
-    #  paste0("Please, upload your \"Playing history audit.csv\" with the original name."),
-    #  easyClose = TRUE,
-    #  footer = NULL
-    #))
     
     options(scipen = 999)
 
@@ -138,7 +133,8 @@ server <-
     
     ### Análise dos torneios pela auditoria ###
     auditoria <- function(audit){
-      # Isola na auditoria apenas o que interessa
+      
+      # Filtra apenas o que interessa
       AAA <- audit[grepl("Tournament Registration|Tournament Unregistration|Tournament Won",audit$V2),]
       
       # Identifica as linhas que informam que um torneio foi desregistrado
@@ -179,6 +175,7 @@ server <-
       AAAun <- AAAun$V3
       
       if (length(AAAun>0)){
+        
         # Pega cada nome identificado e mescla o registro com a vitoria
         for (i in 1:length(AAAun)){
           
@@ -187,14 +184,12 @@ server <-
           
           # marca o registro e o desregistro da tabela geral para apagar
           torneio$V6[ppp[1]] <- sum(as.numeric(torneio$V6[ppp]))
-          
           torneio[ppp[2],1] <- "APAGAR"
         }
       }
       
       # apaga definitivamente o que não interessa
       torneio <- torneio[!grepl("APAGAR",torneio$V1),]
-      
       torneio <- torneio[!grepl("</font>",torneio$V3),]
       torneio <- torneio[!grepl("Freeroll",torneio$V3),]
       
@@ -212,7 +207,6 @@ server <-
       # remove sujeira
       tourns <- gsub("<b> ","",tourns)
       tourns <- gsub("</b>","",tourns)
-      
       tourns
     }
     
@@ -243,7 +237,6 @@ server <-
             NULL
           }
           else {
-            
             showModal(modalDialog(
               title = "ERROR",
               paste0("Not compatible! Please, upload a file \"Playing history audit.csv\" with the original name."),
@@ -255,7 +248,10 @@ server <-
       })
     
     output$uiOutput <- renderUI({
-      fileInput("auditFile","",buttonLabel = "Audit file", placeholder = "upload a \"Playing history audit\" file (.csv) with the original name", accept = ".csv",multiple = F,width = 670)
+      fileInput("auditFile","",
+                buttonLabel = "Audit file",
+                placeholder = "upload a \"Playing history audit\" file (.csv) with the original name",
+                accept = ".csv", multiple = F, width = 670)
     })
     
     plotagem <- function(){
@@ -263,8 +259,10 @@ server <-
       AAA <- isolate(values$AAA)
       
       x<-input$SI
+      
       # captura apenas um torneio determinado
       p<-grep(x,AAA$V3,fixed=T)
+      
       # isola esse torneio
       torneio <- AAA[p,]
       
@@ -272,13 +270,18 @@ server <-
       if (x != "NL"){
         buy_in <- as.numeric(word(x,1))
       }
+      
       else { buy_in <- values$buy_in }
       
       g <- torneio$V6
 
       ganhos <- 0
-      for (i in 1:nrow(torneio)) ganhos[i] <- sum(g[1:i])
-      df_plot <- data.frame(dias=1:nrow(torneio),ganhos=ganhos,valor=torneio$V6,datas=torneio$V1)
+      ganhos = cumsum(g)
+      
+      df_plot <- data.frame(dias=1:nrow(torneio),
+                            ganhos=ganhos,
+                            valor=torneio$V6,
+                            datas=torneio$V1)
       
       # Número de vitórias
       v <- sum(torneio$V6>0)
