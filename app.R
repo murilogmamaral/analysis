@@ -360,16 +360,18 @@ server <-
         layout(hovermode = "x unified",
                plot_bgcolor='#FBFCFC',
                paper_bgcolor='#FBFCFC ',
-               xaxis=list(tickformat=',d')
+               xaxis=list(tickformat=',d',title = "games\n"),
+               yaxis=list(title = "win-loss")
                )
       if (sum(torneio$V6[torneio$V6 > 0])>0){
         
         vitorias <- torneio$V6[torneio$V6 > 0]
         vitorias <- max(vitorias)
-        
-        fig <- fig %>% add_annotations(x = a[c(0,torneio$V6) >= vitorias],
-                                       y = b[c(0,torneio$V6) >= vitorias],
-                                       text = "[$]",
+        maximo <- c(0,torneio$V6) >= vitorias
+
+        fig <- fig %>% add_annotations(x = a[maximo],
+                                       y = b[maximo],
+                                       text = "$",
                                        bgcolor = "yellow",
                                        opacity = 1,
                                        xref = "x",
@@ -377,8 +379,8 @@ server <-
                                        showarrow = T,
                                        arrowcolor="green",
                                        arrowhead = 6,
-                                       arrowsize = 2,
-                                       arrowwidth = 0.8,
+                                       arrowsize = 1,
+                                       arrowwidth = 0.9,
                                        ax = -10,
                                        ay = -40
         )
