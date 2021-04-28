@@ -371,7 +371,7 @@ server <-
 
         fig <- fig %>% add_annotations(x = a[maximo],
                                        y = b[maximo],
-                                       text = "$",
+                                       text = "$", 
                                        bgcolor = "yellow",
                                        opacity = 1,
                                        xref = "x",
