@@ -277,7 +277,7 @@ server <-
 
       ganhos <- 0
       
-      for (i in 1:length(torneio$V6)) ganhos[i] <- sum(g[1:i]) 
+      for (i in 1:length(torneio$V6)) ganhos[i] <- sum(g[1:i])  
       
       df_plot <- data.frame(dias=1:nrow(torneio),
                             ganhos=ganhos,
