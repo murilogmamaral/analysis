@@ -147,10 +147,10 @@ server <-
       for (i in 1:length(unregistration)){
         
         # pega o nome e localiza o registro e o desregistro
-        ppp <- grep(unregistration[i],total$V3,fixed = T)[1:2]
+        n <- grep(unregistration[i],total$V3,fixed = T)[1:2]
         
         # marca o registro e o desregistro da tabela geral para apagar
-        total[ppp,] <- "APAGAR"
+        total[n,] <- "APAGAR"
       }
       
       # apaga definitivamente o que não interessa
@@ -180,11 +180,11 @@ server <-
         for (i in 1:length(unregistration)){
           
           # pega o nome e localiza o registro e a vitória
-          ppp <- grep(unregistration[i],torneio$V3,fixed = T)
+          n <- grep(unregistration[i],torneio$V3,fixed = T)
           
           # marca o registro e o desregistro da tabela geral para apagar
-          torneio$V6[ppp[1]] <- sum(as.numeric(torneio$V6[ppp]))
-          torneio[ppp[2],1] <- "APAGAR"
+          torneio$V6[n[1]] <- sum(as.numeric(torneio$V6[n]))
+          torneio[n[2],1] <- "APAGAR"
         }
       }
       
