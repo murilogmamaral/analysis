@@ -127,7 +127,7 @@ server <-
     }
     
     values <- reactiveValues(
-      AAA = NULL,
+      total = NULL,
       buy_in = NULL
     )
     
@@ -135,29 +135,29 @@ server <-
     auditoria <- function(audit){
       
       # Filtra apenas o que interessa
-      AAA <- audit[grepl("Tournament Registration|Tournament Unregistration|Tournament Won",audit$V2),]
+      total <- audit[grepl("Tournament Registration|Tournament Unregistration|Tournament Won",audit$V2),]
       
       # Identifica as linhas que informam que um torneio foi desregistrado
-      AAAun <- AAA[grepl("Tournament Unregistration",AAA$V2),]
+      unregistration <- total[grepl("Tournament Unregistration",total$V2),]
       
       # Identifica o nome dos torneios que foram desregistrados
-      AAAun <- AAAun$V3
+      unregistration <- unregistration$V3
       
       # Pega cada nome identificado e exclui o registro e o desregistro do jogo
-      for (i in 1:length(AAAun)){
+      for (i in 1:length(unregistration)){
         
         # pega o nome e localiza o registro e o desregistro
-        ppp <- grep(AAAun[i],AAA$V3,fixed = T)[1:2]
+        ppp <- grep(unregistration[i],total$V3,fixed = T)[1:2]
         
         # marca o registro e o desregistro da tabela geral para apagar
-        AAA[ppp,] <- "APAGAR"
+        total[ppp,] <- "APAGAR"
       }
       
       # apaga definitivamente o que não interessa
-      AAA <- AAA[!grepl("APAGAR",AAA$V1),]
+      total <- total[!grepl("APAGAR",total$V1),]
       
-      #rownames(AAA) <- 1:nrow(AAA)
-      torneio <- AAA
+      #rownames(total) <- 1:nrow(total)
+      torneio <- total
       
       # transforma de character para numeric
       torneio[,6] <- sapply(torneio[,6], function(x) as.numeric(x), USE.NAMES = F)
@@ -169,18 +169,18 @@ server <-
       torneio$V1 <- word(torneio$V1, 1)
       
       # Identifica as linhas que informam que um torneio foi vencido
-      AAAun <- torneio[torneio$V2 %in% "Tournament Won",]
+      unregistration <- torneio[torneio$V2 %in% "Tournament Won",]
       
       # Identifica o nome dos torneios que foram vencidos
-      AAAun <- AAAun$V3
+      unregistration <- unregistration$V3
       
-      if (length(AAAun>0)){
+      if (length(unregistration>0)){
         
         # Pega cada nome identificado e mescla o registro com a vitoria
-        for (i in 1:length(AAAun)){
+        for (i in 1:length(unregistration)){
           
           # pega o nome e localiza o registro e a vitória
-          ppp <- grep(AAAun[i],torneio$V3,fixed = T)
+          ppp <- grep(unregistration[i],torneio$V3,fixed = T)
           
           # marca o registro e o desregistro da tabela geral para apagar
           torneio$V6[ppp[1]] <- sum(as.numeric(torneio$V6[ppp]))
@@ -196,7 +196,7 @@ server <-
       rownames(torneio) <- 1:nrow(torneio)
       
       # estoca torneio
-      values$AAA <- torneio
+      values$total <- torneio
       
       # lista o nome dos torneios
       tourns <- gsub(".*\\$","",torneio$V3)
@@ -256,15 +256,15 @@ server <-
     
     plotagem <- function(){
       
-      AAA <- isolate(values$AAA)
+      total <- isolate(values$total)
       
       x<-input$SI
       
       # captura apenas um torneio determinado
-      p<-grep(x,AAA$V3,fixed=T)
+      p<-grep(x,total$V3,fixed=T)
       
       # isola esse torneio
-      torneio <- AAA[p,]
+      torneio <- total[p,]
       
       # identifica o buy-in
       if (x != "NL"){
