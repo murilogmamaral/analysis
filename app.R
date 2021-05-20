@@ -2,10 +2,30 @@
 library(plotly)
 library(shiny)
 
-BACKGROUND <- function(){
+options(scipen = 999)
+
+word <- function(x,y) {
+  
+  x <- as.character(x)
+  
+  final <- NULL
+  for (i in 1:length(x)){
+    words <- strsplit(x[i]," ")[[1]]
+    if (y > 0){
+      final <- append(final, words[y])
+    }
+    else {
+      contrario <- length(words) + 1 + y
+      final <- append(final,words[contrario])
+    }
+  }
+  final
+}
+
+CSS <- function(){
   tags$head(
     tags$style(paste0(
-"body {
+      "body {
 content: '';
 background-color: WhiteSmoke
 }
@@ -59,37 +79,35 @@ color: darkgray;
 line-height: 30px;
 font-size: 11px;
 }
+
+#VTO {font-size:15px;
+font-weight: bold;background-color: transparent;
+border-color:black; display: table-cell;
+vertical-align: middle }
+
+#titulo {font-size:14px;
+font-weight:bold; text-align:center;
+width:670px}
+    
+#DTO tfoot {display:none;}
+    
+#DTO .table th { text-align: center; }
+#DTO .table td { text-align: center; }
+#DTO { text-align:center }
+       
 ")))
 }
 
 ui <- fluidPage(
   
-  tags$head(tags$style(
-    "#titulo{font-size:14px;
-    font-weight:bold; text-align:center;
-    width:670px}"
-  )),
-  
-  BACKGROUND(),
-  
+  CSS(),
   HTML("<br>"),
   
   mainPanel(
     HTML("<br>"),
-    tags$style(type="text/css",
-               "#DTO tfoot {display:none;}"),
-    tags$style(paste0(
-      "#DTO .table th { text-align: center; }
-       #DTO .table td { text-align: center; }
-       #DTO { text-align:center }")),
     verbatimTextOutput("titulo"),
     uiOutput("uiOutput"),
     uiOutput("uiOutput2"),
-    tags$head(tags$style("
-       #VTO{font-size:15px;
-       font-weight: bold;background-color: transparent;
-       border-color:black; display: table-cell;
-       vertical-align: middle }")),
     verbatimTextOutput("VTO"),
     HTML("<br>"),
     uiOutput("uiOutput3"),
@@ -106,111 +124,71 @@ server <-
     
     output$titulo <- renderPrint({cat("Win-Loss Analysis")})
     
-    options(scipen = 999)
-
-    word <- function(x,y) {
-      
-      x <- as.character(x)
-      
-      final <- NULL
-      for (i in 1:length(x)){
-        words <- strsplit(x[i]," ")[[1]]
-        if (y > 0){
-          final <- append(final, words[y])
-        }
-        else {
-          contrario <- length(words) + 1 + y
-          final <- append(final,words[contrario])
-        }
-      }
-      final
-    }
-    
     values <- reactiveValues(
       total = NULL,
       buy_in = NULL
     )
     
-    ### Análise dos torneios pela auditoria ###
+    ### Função para organizar a tabela e separar os nomes dos torneios para o selectinput ###
     auditoria <- function(audit){
       
       # Filtra apenas o que interessa
       total <- audit[grepl("Tournament Registration|Tournament Unregistration|Tournament Won",audit$V2),]
       
-      # Identifica as linhas que informam que um torneio foi desregistrado
+      # Identifica os torneios que foram desregistrados
       unregistration <- total[grepl("Tournament Unregistration",total$V2),]
       
-      # Identifica o nome dos torneios que foram desregistrados
+      # Separa só os nomes desses torneios
       unregistration <- unregistration$V3
       
-      # Pega cada nome identificado e exclui o registro e o desregistro do jogo
-      for (i in 1:length(unregistration)){
-        
-        # pega o nome e localiza o registro e o desregistro
-        n <- grep(unregistration[i],total$V3,fixed = T)[1:2]
-        
-        # marca o registro e o desregistro da tabela geral para apagar
-        total[n,] <- "APAGAR"
-      }
+      # Exclui todas as linhas relativas aos torneios desregistrados
+      torneio <- total[!total$V3 %in% unregistration,]
       
-      # apaga definitivamente o que não interessa
-      total <- total[!grepl("APAGAR",total$V1),]
+      # Transforma coluna 6 em numeric
+      torneio$V6 <- as.numeric(torneio$V6)
       
-      #rownames(total) <- 1:nrow(total)
-      torneio <- total
-      
-      # transforma de character para numeric
-      torneio[,6] <- sapply(torneio[,6], function(x) as.numeric(x), USE.NAMES = F)
-      
-      # estoca a média do buy-in geral
+      # Estoca a média do buy-in geral
       values$buy_in <- mean(torneio$V6[torneio$V2 == "Tournament Registration"])*(-1)
       
-      # transforma a primeira linha só para as datas, sem horários
-      torneio$V1 <- word(torneio$V1, 1)
+      # Transforma a primeira linha só para as datas (sem horários)
+      torneio$V1 <- word(torneio$V1,1)
       
       # Identifica as linhas que informam que um torneio foi vencido
-      unregistration <- torneio[torneio$V2 %in% "Tournament Won",]
+      won <- torneio[torneio$V2 %in% "Tournament Won",]
+      # Separa os nomes desses torneios
+      won <- won$V3
       
-      # Identifica o nome dos torneios que foram vencidos
-      unregistration <- unregistration$V3
-      
-      if (length(unregistration>0)){
-        
-        # Pega cada nome identificado e mescla o registro com a vitoria
-        for (i in 1:length(unregistration)){
-          
-          # pega o nome e localiza o registro e a vitória
-          n <- grep(unregistration[i],torneio$V3,fixed = T)
-          
-          # marca o registro e o desregistro da tabela geral para apagar
+      if (length(won>0)){
+        # Pega cada nome para juntar o registro com a vitoria (soma o buy-in [negativo] com o prêmio)
+        for (i in 1:length(won)){
+          n <- grep(won[i],torneio$V3,fixed = T)
           torneio$V6[n[1]] <- sum(as.numeric(torneio$V6[n]))
           torneio[n[2],1] <- "APAGAR"
         }
       }
-      
-      # apaga definitivamente o que não interessa
+  
+      # Apaga definitivamente o que não interessa
       torneio <- torneio[!grepl("APAGAR",torneio$V1),]
       torneio <- torneio[!grepl("</font>",torneio$V3),]
       torneio <- torneio[!grepl("Freeroll",torneio$V3),]
       
       rownames(torneio) <- 1:nrow(torneio)
       
-      # estoca torneio
       values$total <- torneio
       
-      # lista o nome dos torneios
+      # Lista os nomes dos torneios
       tourns <- gsub(".*\\$","",torneio$V3)
       
-      # finaliza a lista sem duplicações
+      # Finaliza a lista sem duplicações
       tourns <- tourns[!duplicated(tourns)]
       
-      # remove sujeira
+      # Remove sujeira
       tourns <- gsub("<b> ","",tourns)
       tourns <- gsub("</b>","",tourns)
       tourns
     }
     
-    # comando para subir o balanço de ganhos
+    # Comando para subir o balanço de ganhos
     my_file <- reactive({
       inFile <- input$auditFile
       if (is.null(inFile)) return(NULL)
@@ -260,25 +238,19 @@ server <-
       
       x<-input$SI
       
-      # captura apenas um torneio determinado
+      # Separa apenas o torneio selecionado para plotar
       p<-grep(x,total$V3,fixed=T)
-      
-      # isola esse torneio
       torneio <- total[p,]
       
-      # identifica o buy-in
+      # Identifica o buy-in
       if (x != "NL"){
         buy_in <- as.numeric(word(x,1))
       }
       
       else { buy_in <- values$buy_in }
-      
       g <- torneio$V6
-
       ganhos <- 0
-      
       ganhos = cumsum(g)
-      
       df_plot <- data.frame(dias=1:nrow(torneio),
                             ganhos=ganhos,
                             valor=torneio$V6,
@@ -303,7 +275,6 @@ server <-
       
       output$DTO <- renderDataTable({ 
         if(input$SI > 0) {
-          
           dia<-torneio$V1
           lucro<-torneio$V6
           vitoria<-NULL
@@ -316,7 +287,10 @@ server <-
             }
           }
           
-          torneio<-data.frame(dia=dia,jogos=rep(1,njogos),vitorias=vitoria,lucro=lucro)
+          torneio<-data.frame(dia=dia,
+                              jogos=rep(1,njogos),
+                              vitorias=vitoria,
+                              lucro=lucro)
           
           torneio <- aggregate(list(torneio[2],torneio[3],torneio[4]),torneio[1],FUN = function(y) sum(y))
           
@@ -331,45 +305,43 @@ server <-
           torneio <- torneio[,c(1,2,3,5,4)]
           
           torneio
-          
-        } },options = list(pageLength = 10, filter = "top", lengthChange = FALSE,
-                           autowidth = T,
-                           columnDefs = list(list(width = '100px', targets = 0),
-                                             list(width = '50px',targets = 1:4))
-        ), searchDelay = 1000
-        )
+        }
+      },
+      options = list(pageLength = 10, filter = "top", lengthChange = FALSE,
+                     autowidth = T,columnDefs = list(list(width = '100px', targets = 0),
+                                                     list(width = '50px',targets = 1:4))
+      ), searchDelay = 1000)
       
       a <- c(0,df_plot$dias)
       b <- c(0,df_plot$ganhos)
+      
       titulos <- paste("<b>",c("",df_plot$datas),"</b>\n <i>T",gsub("$","</i> \n <b>$",c("",torneio$V3),fixed=T),paste0("</b> \n Profit: ",format(c(0,torneio$V6),nsmall = 2)),"dollars")
-
+      
       fig<-plot_ly(
-          type = 'scatter',
-          mode = 'lines',
-          size = I(1),
-          x = a,
-          y = b,
-          color = I("#34495E"),
-          text = c(titulos),
-          hovertemplate = paste(
-                                '%{text}',
-                                '<extra></extra>'),
-          
-          showlegend = FALSE
-        )
+        type = 'scatter',
+        mode = 'lines',
+        size = I(1),
+        x = a,
+        y = b,
+        color = I("#34495E"),
+        text = c(titulos),
+        hovertemplate = paste(
+          '%{text}',
+          '<extra></extra>'),
+        showlegend = FALSE
+      )
       fig <- fig %>%
         layout(hovermode = "x unified",
                plot_bgcolor='#FBFCFC',
                paper_bgcolor='#FBFCFC ',
                xaxis=list(tickformat=',d',title = "games\n"),
                yaxis=list(title = "win-loss")
-               )
+        )
       if (sum(torneio$V6[torneio$V6 > 0])>0){
-        
         vitorias <- torneio$V6[torneio$V6 > 0]
         vitorias <- max(vitorias)
         maximo <- c(0,torneio$V6) >= vitorias
-
+        
         fig <- fig %>% add_annotations(x = a[maximo],
                                        y = b[maximo],
                                        text = "$", 
@@ -395,7 +367,7 @@ server <-
           plotagem()
         }
       })
-      })
+    })
     
   }
 
